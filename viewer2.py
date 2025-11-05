@@ -6,8 +6,8 @@ import streamlit as st
 st.set_page_config(page_title="Job Listings Viewer", layout="wide")
 st.title("Daily Job Listings Dashboard")
 
-FI_FILE = "fi.json"
-EMEA_FILE = "emea.json"
+FI_FILE = "jaysons/fi_latest.json"
+EMEA_FILE = "jaysons/emea_latest.json"
 
 def load_jobs(file_path):
     if not os.path.exists(file_path):
@@ -50,7 +50,7 @@ def render_jobs(jobs):
                 if "distance_from_jyvaskyla_km" in job:
                     st.caption(f"📍 {job['distance_from_jyvaskyla_km']} km from Jyväskylä")
                 if desc:
-                    st.caption(desc[:500] + ("..." if len(desc) > 500 else ""))
+                    st.caption(job.get("description", "")[:10000] + "...")
                 st.divider()
                 count += 1
     if count == 0:

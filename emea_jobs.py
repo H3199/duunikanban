@@ -50,6 +50,7 @@ dealbreakers = [
     "eligible to work in france only",
     "eligible to work in spain only",
     "eligible to work in italy only",
+    "hybrid working"
     ]
 
 emea = [

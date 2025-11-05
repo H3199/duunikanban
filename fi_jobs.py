@@ -33,6 +33,27 @@ def fetch_jobs_FI():
     else:
         return ("Error:", response.status_code, response.text)
 
+def filter_jobs(jobs, radius_km=50):
+    filtered = []
+    for job in jobs:
+        remote = job.get("remote", False)
+        hybrid = job.get("hybrid", False)
+        lat = job.get("latitude")
+        lon = job.get("longitude")
+
+        if remote or hybrid:
+            # Always include remote/hybrid
+            job["filter_reason"] = "remote_or_hybrid"
+            filtered.append(job)
+        elif lat is not None and lon is not None:
+            # Include onsite jobs near Jyväskylä
+            distance = haversine(jkl_lat, jkl_lon, lat, lon)
+            if distance <= radius_km:
+                job["distance_from_jyvaskyla_km"] = round(distance, 2)
+                job["filter_reason"] = f"onsite_within_{radius_km}km"
+                filtered.append(job)
+
+    return filtered
 
 # This function calculates the distance between two coordinate points
 def haversine(lat1, lon1, lat2, lon2):
@@ -72,17 +93,15 @@ def filter_remote_jobs(jobs, include=True):
 
     return filtered
 
-
 if __name__ == "__main__":
     jobs_FI = fetch_jobs_FI()
+
+    # Extract the job list
     if isinstance(jobs_FI, dict) and "data" in jobs_FI:
         jobs_list = jobs_FI["data"]
     else:
         jobs_list = jobs_FI
 
-    onsite_list = filter_remote_jobs(jobs_list, False)
-    #print(json.dumps(onsite_list))
+    filtered_jobs = filter_jobs(jobs_list)
 
-    jobs_JKL = filter_jobs_near_jkl(onsite_list)
-    print(json.dumps(jobs_JKL))
-
+    print(json.dumps(filtered_jobs, indent=2))
