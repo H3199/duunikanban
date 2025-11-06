@@ -1,0 +1,6 @@
+requests
+json
+math
+python-dotenv
+langdetect
+streamlit
