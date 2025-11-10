@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import requests
+import logging
 import json
 import os
 from dotenv import load_dotenv
@@ -9,9 +10,15 @@ from datetime import datetime
 load_dotenv()
 
 theirstack_key = os.getenv("THEIRSTACK_API_KEY")
-jkl_lat = 62.2426
-jkl_lon = 25.7473
+# TODO: move this to .env
+home_lat = 62.2426
+home_lon = 25.7473
 #openai_key = os.getenv("OPENAI_API_KEY")
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),  # set LOG_LEVEL=DEBUG in .env to enable debug dump
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 
 
 def fetch_jobs_FI():
@@ -30,10 +37,14 @@ def fetch_jobs_FI():
         }
     response = requests.post(url, headers=headers, json=data)
     if response.ok:
+        logging.info("Fetched Finnish jobs successfully.")
         return response.json()
     else:
-        return ("Error:", response.status_code, response.text)
+        logging.error(f"API error {response.status_code}: {response.text}")
+        return {"data": []}
 
+
+# This function filters out onsite jobs outside the defined radius of home coordinates.
 def filter_jobs(jobs, radius_km=50):
     filtered = []
     for job in jobs:
@@ -47,14 +58,14 @@ def filter_jobs(jobs, radius_km=50):
             job["filter_reason"] = "remote_or_hybrid"
             filtered.append(job)
         elif lat is not None and lon is not None:
-            # Include onsite jobs near Jyväskylä
-            distance = haversine(jkl_lat, jkl_lon, lat, lon)
+            distance = haversine(home_lat, home_lon, lat, lon)
             if distance <= radius_km:
-                job["distance_from_jyvaskyla_km"] = round(distance, 2)
+                job["distance_from_home_km"] = round(distance, 2)
                 job["filter_reason"] = f"onsite_within_{radius_km}km"
                 filtered.append(job)
 
     return filtered
+
 
 # This function calculates the distance between two coordinate points
 def haversine(lat1, lon1, lat2, lon2):
@@ -66,49 +77,28 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c
 
 
-def filter_jobs_near_jkl(jobs, radius_km=50):
-    filtered = []
-    for job in jobs:
-        lat = job.get("latitude")
-        lon = job.get("longitude")
-        if lat is not None and lon is not None:
-            distance = haversine(jkl_lat, jkl_lon, lat, lon)
-            if distance <= radius_km:
-                job["distance_from_jyvaskyla_km"] = round(distance, 2)
-                filtered.append(job)
-    return filtered
-
-
-def filter_remote_jobs(jobs, include=True):
-    filtered = []
-    for job in jobs:
-        remote = job.get("remote", False)
-        hybrid = job.get("hybrid", False)
-
-        if include:
-            if remote or hybrid:
-                filtered.append(job)
-        else:
-            if not remote and not hybrid:
-                filtered.append(job)
-
-    return filtered
-
 if __name__ == "__main__":
     jobs_FI = fetch_jobs_FI()
 
-    # Extract the job list
     if isinstance(jobs_FI, dict) and "data" in jobs_FI:
         jobs_list = jobs_FI["data"]
     else:
         jobs_list = jobs_FI
 
+    logging.info(f"Fetched {len(jobs_list)} jobs before filtering.")
     filtered_jobs = filter_jobs(jobs_list)
+    logging.info(f"{len(filtered_jobs)} jobs remained after filtering.")
 
-    # Wrap the results with a timestamp
+    # If in DEBUG mode, dump unfiltered jobs for inspection
+    if logging.getLogger().level == logging.DEBUG:
+        debug_file = "debug_fi_jobs.json"
+        with open(debug_file, "w") as f:
+            json.dump(jobs_list, f, indent=2)
+        logging.debug(f"Dumped unfiltered job data to {debug_file}")
+
     output = {
         "fetched_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-        "data": filtered_jobs
+        "data": filtered_jobs,
     }
 
     print(json.dumps(output, indent=2))

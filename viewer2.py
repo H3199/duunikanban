@@ -12,6 +12,7 @@ FI_PREFIX = "fi_"
 EMEA_PREFIX = "emea_"
 LATEST_SUFFIX = "_latest.json"
 
+
 def find_available_dates(prefix):
     """Return sorted list of available YYYY-MM-DD dates for a given file prefix."""
     dates = []
@@ -24,6 +25,7 @@ def find_available_dates(prefix):
             except Exception:
                 pass
     return sorted(dates, reverse=True)
+
 
 def load_jobs(file_path, raw=False):
     if not os.path.exists(file_path):
@@ -40,6 +42,7 @@ def load_jobs(file_path, raw=False):
     except Exception as e:
         st.error(f"Error loading {file_path}: {e}")
         return {}
+
 
 def render_jobs(jobs):
     """Render job listings nicely."""
@@ -58,8 +61,8 @@ def render_jobs(jobs):
                 st.markdown(f"### [{title}]({job.get('url', '')})")
                 st.write(f"**Company:** {company}")
                 st.write(f"**Location:** {location}")
-                if "distance_from_jyvaskyla_km" in job:
-                    st.caption(f" {job['distance_from_jyvaskyla_km']} km from Jyväskylä")
+                if "distance_from_home_km" in job:
+                    st.caption(f" {job['distance_from_home_km']} km from home")
                 if desc:
                     st.caption(job.get("description", "")[:10000] + "...")
                 st.divider()
@@ -72,13 +75,28 @@ def render_jobs(jobs):
 available_fi_dates = find_available_dates(FI_PREFIX)
 available_emea_dates = find_available_dates(EMEA_PREFIX)
 
-# Default to latest if exists
+# --- Select date ---
+available_fi_dates = find_available_dates(FI_PREFIX)
+available_emea_dates = find_available_dates(EMEA_PREFIX)
+
+# Default to latest available date
 latest_date = available_fi_dates[0] if available_fi_dates else datetime.now().strftime("%Y-%m-%d")
 selected_date = st.sidebar.selectbox("Select date", available_fi_dates or [latest_date])
 
-# Compose filenames
-FI_FILE = os.path.join(DATA_DIR, f"{FI_PREFIX}{selected_date}.json")
-EMEA_FILE = os.path.join(DATA_DIR, f"{EMEA_PREFIX}{selected_date}.json")
+# Check for "_latest.json" fallback
+fi_latest_path = os.path.join(DATA_DIR, f"{FI_PREFIX}latest.json")
+emea_latest_path = os.path.join(DATA_DIR, f"{EMEA_PREFIX}latest.json")
+
+# Use _latest.json if it exists and selected_date == latest_date
+if os.path.exists(fi_latest_path) and selected_date == latest_date:
+    FI_FILE = fi_latest_path
+else:
+    FI_FILE = os.path.join(DATA_DIR, f"{FI_PREFIX}{selected_date}.json")
+
+if os.path.exists(emea_latest_path) and selected_date == latest_date:
+    EMEA_FILE = emea_latest_path
+else:
+    EMEA_FILE = os.path.join(DATA_DIR, f"{EMEA_PREFIX}{selected_date}.json")
 
 jobs_fi = load_jobs(FI_FILE)
 jobs_emea = load_jobs(EMEA_FILE)
