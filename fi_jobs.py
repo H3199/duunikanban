@@ -10,9 +10,8 @@ from datetime import datetime
 load_dotenv()
 
 theirstack_key = os.getenv("THEIRSTACK_API_KEY")
-# TODO: move this to .env
-home_lat = 62.2426
-home_lon = 25.7473
+home_lat = float(os.getenv("HOME_LAT"))
+home_lon = float(os.getenv("HOME_LON"))
 #openai_key = os.getenv("OPENAI_API_KEY")
 
 logging.basicConfig(
@@ -52,6 +51,12 @@ def filter_jobs(jobs, radius_km=50):
         hybrid = job.get("hybrid", False)
         lat = job.get("latitude")
         lon = job.get("longitude")
+        desc = job.get("job_description", "").lower()
+
+        # Check description for remote/hybrid hints if flags are not set
+        if not remote and not hybrid:
+            if any(word in desc for word in ["remote", "hybrid","hybridi", "hybridimahdollisuus", "joustava", "etätyö", "etänä", "etätyönä", "etätyömahdollisuus"]):
+                remote = True
 
         if remote or hybrid:
             # Always include remote/hybrid
@@ -68,7 +73,7 @@ def filter_jobs(jobs, radius_km=50):
 
 
 # This function calculates the distance between two coordinate points
-def haversine(lat1, lon1, lat2, lon2):
+def haversine(lat1 : float, lon1 : float, lat2 : float, lon2 : float):
     R = 6371.0  # Earth radius in km
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
