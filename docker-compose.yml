@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  duunihaku:
+    build: .
+    container_name: duunihaku
+    restart: always
+    environment:
+      - TZ=Europe/Helsinki
+      - MOCK=1 # or remove for production
+      - THEIRSTACK_API_KEY=${THEIRSTACK_API_KEY}
+      - HOME_LAT=${HOME_LAT}
+      - HOME_LON=${HOME_LON}
+    volumes:
+      - ./jaysons:/app/jaysons
+      - ./logs:/var/log
+    ports:
+      - "8501:8501"
+    command: >
+      bash -c "service cron start &&
+               streamlit run viewer2.py --server.port=8501 --server.address=0.0.0.0"
