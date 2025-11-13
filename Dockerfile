@@ -12,7 +12,7 @@ COPY . .
 RUN chmod +x /app/runner.sh /app/entrypoint.sh
 
 # Set cron job
-RUN echo "0 11 * * * /app/runner.sh >> /var/log/cron.log 2>&1" > /etc/cron.d/jobfetcher \
+RUN echo "0 11 * * * cd app && /app/runner.sh >> /var/log/cron.log 2>&1" > /etc/cron.d/jobfetcher \
     && chmod 0644 /etc/cron.d/jobfetcher \
     && crontab /etc/cron.d/jobfetcher
 
