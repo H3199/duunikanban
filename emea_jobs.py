@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import requests
+import logging
 import json
 import os
 from dotenv import load_dotenv
 from langdetect import detect, DetectorFactory
 from datetime import datetime
+from mytypes import Job
+from typing import List
 
 
 dealbreakers = [
@@ -45,10 +48,10 @@ dealbreakers = [
     "remote in france",
     "remote in spain",
     "remote in poland",
-    "remote within italy"
-    "remote within eu only",
     "remote within switzerland",
     "remote within austria",
+    "remote within italy",
+    "remote within eu only",
     "not available outside",
     "not open to remote workers abroad",
     "eligible to work in germany only",
@@ -106,15 +109,20 @@ emea = [
 DetectorFactory.seed = 0
 load_dotenv()
 
-theirstack_key = os.getenv("THEIRSTACK_API_KEY")
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+THEIRSTACK_KEY = os.getenv("THEIRSTACK_API_KEY")
 #openai_key = os.getenv("OPENAI_API_KEY")
 
-
-def fetch_jobs_emea():
+# Fetch EMEA remote jobs from TheirStack API and return as a list of Job objects.
+def fetch_jobs_emea() -> List[Job]:
     url = "https://api.theirstack.com/v1/jobs/search"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {theirstack_key}"
+        "Authorization": f"Bearer {THEIRSTACK_KEY}"
         }
     data = {
         "page": 0,
@@ -127,14 +135,18 @@ def fetch_jobs_emea():
         "job_title_or": ["devops", "site reliability", "infrastructure", "platform", "system", "administrator", "dba"]
         }
     response = requests.post(url, headers=headers, json=data)
-    if response.ok:
-        return response.json()
-    else:
-        return ("Error:", response.status_code, response.text)
+    if not response.ok:
+        raise RuntimeError(
+            f"EMEA fetch failed: {response.status_code} {response.text}"
+        )
+    payload = response.json()
+    jobs_raw = payload.get("data", [])
+    jobs: List[Job] = [Job(**job) for job in jobs_raw]
+    return jobs
 
 
-def filter_english_jobs(jobs):
-    english_jobs = []
+def filter_english_jobs(jobs: List[Job]) -> List[Job]:
+    english_jobs: List[Job] = []
     for job in jobs:
         description = job.get("description", "")
         if not description:
@@ -149,17 +161,22 @@ def filter_english_jobs(jobs):
 
 
 if __name__ == "__main__":
-    jobs_emea = fetch_jobs_emea()
-
-    if isinstance(jobs_emea, dict) and "data" in jobs_emea:
-        jobs_list = jobs_emea["data"]
-    else:
-        jobs_list = jobs_emea
+    # Fetch and filter jobs
+    jobs_list = fetch_jobs_emea()
+    logging.info(f"Fetched {len(jobs_list)} jobs before filtering.")
     en_jobs = filter_english_jobs(jobs_list)
+    logging.info(f"{len(filtered_english_jobs)} jobs remained after filtering.")
 
-# Wrap with a timestamp.
+    # Dump unfiltered jobs in debug mode
+    if logging.getLogger().level == logging.DEBUG:
+        debug_file = "debug_en_jobs.json"
+        with open(debug_file, "w") as f:
+            json.dump(jobs_list, f, indent=2)
+        logging.debug(f"Dumped unfiltered job data to {debug_file}")
+
+    # Wrap results with timestamp
     output = {
-    "fetched_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-    "data": en_jobs
+        "fetched_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "data": [job.__dict__ if hasattr(job, "__dict__") else job for job in en_jobs],
     }
-    print(json.dumps(output))
+    print(json.dumps(output, indent=2))

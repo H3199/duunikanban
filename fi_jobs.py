@@ -1,51 +1,55 @@
 #!/usr/bin/env python3
-import requests
-import logging
 import json
+import logging
 import os
-from dotenv import load_dotenv
-from math import radians, sin, cos, sqrt, atan2
 from datetime import datetime
+from math import radians, sin, cos, sqrt, atan2
+from typing import List, Optional
+import requests
+from dotenv import load_dotenv
+from mytypes import Job
 
 load_dotenv()
 
-theirstack_key = os.getenv("THEIRSTACK_API_KEY")
-home_lat = float(os.getenv("HOME_LAT"))
-home_lon = float(os.getenv("HOME_LON"))
-#openai_key = os.getenv("OPENAI_API_KEY")
+THEIRSTACK_KEY = os.getenv("THEIRSTACK_API_KEY")
+HOME_LAT = float(os.getenv("HOME_LAT"))
+HOME_LON = float(os.getenv("HOME_LON"))
 
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),  # set LOG_LEVEL=DEBUG in .env to enable debug dump
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
 
-def fetch_jobs_FI():
+def fetch_jobs_fi() -> List[Job]:
+    """Fetch Finnish jobs from TheirStack API."""
     url = "https://api.theirstack.com/v1/jobs/search"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {theirstack_key}"
-        }
+        "Authorization": f"Bearer {THEIRSTACK_KEY}",
+    }
     data = {
         "page": 0,
         "limit": 25,
         "job_country_code_or": ["FI"],
         "posted_at_max_age_days": 1,
-        "job_description_pattern_or": ["devops", "kubernetes", "cassandra", "linux"],
-        "job_title_or": ["devops", "site reliability", "infrastructure", "platform", "system", "administrator", "dba"]
-        }
+        "job_description_pattern_or": [
+            "devops", "kubernetes", "cassandra", "linux"
+        ],
+        "job_title_or": [
+            "devops", "site reliability", "infrastructure", "platform",
+            "system", "administrator", "dba"
+        ],
+    }
     response = requests.post(url, headers=headers, json=data)
-    if response.ok:
-        logging.info("Fetched Finnish jobs successfully.")
-        return response.json()
-    else:
-        logging.error(f"API error {response.status_code}: {response.text}")
-        return {"data": []}
+    if not response.ok:
+        raise RuntimeError(f"FI fetch failed: {response.status_code} {response.text}")
+
+    return response.json().get("data", [])
 
 
-# This function filters out onsite jobs outside the defined radius of home coordinates.
-def filter_jobs(jobs, radius_km=50):
-    filtered = []
+def filter_jobs(jobs: List[Job], radius_km: float = 50) -> List[Job]:
+    filtered: List[Job] = []
     for job in jobs:
         remote = job.get("remote", False)
         hybrid = job.get("hybrid", False)
@@ -55,26 +59,28 @@ def filter_jobs(jobs, radius_km=50):
 
         # Check description for remote/hybrid hints if flags are not set
         if not remote and not hybrid:
-            if any(word in desc for word in ["remote", "hybrid","hybridi", "hybridimahdollisuus", "joustava", "etätyö", "etänä", "etätyönä", "etätyömahdollisuus"]):
+            if any(word in desc for word in [
+                    "remote", "hybrid", "hybridi", "hybridimahdollisuus",
+                    "joustava", "etätyö", "etänä", "etätyönä", "etätyömahdollisuus"
+                ]
+            ):
                 remote = True
 
         if remote or hybrid:
-            # Always include remote/hybrid
             job["filter_reason"] = "remote_or_hybrid"
             filtered.append(job)
         elif lat is not None and lon is not None:
-            distance = haversine(home_lat, home_lon, lat, lon)
+            distance = haversine(HOME_LAT, HOME_LON, lat, lon)
             if distance <= radius_km:
                 job["distance_from_home_km"] = round(distance, 2)
                 job["filter_reason"] = f"onsite_within_{radius_km}km"
                 filtered.append(job)
-
     return filtered
 
 
-# This function calculates the distance between two coordinate points
-def haversine(lat1 : float, lon1 : float, lat2 : float, lon2 : float):
-    R = 6371.0  # Earth radius in km
+def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate the great-circle distance in kilometers between two points."""
+    R = 6371.0
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
@@ -83,18 +89,13 @@ def haversine(lat1 : float, lon1 : float, lat2 : float, lon2 : float):
 
 
 if __name__ == "__main__":
-    jobs_FI = fetch_jobs_FI()
-
-    if isinstance(jobs_FI, dict) and "data" in jobs_FI:
-        jobs_list = jobs_FI["data"]
-    else:
-        jobs_list = jobs_FI
-
+    jobs_list = fetch_jobs_fi()
     logging.info(f"Fetched {len(jobs_list)} jobs before filtering.")
+
     filtered_jobs = filter_jobs(jobs_list)
     logging.info(f"{len(filtered_jobs)} jobs remained after filtering.")
 
-    # If in DEBUG mode, dump unfiltered jobs for inspection
+    # Dump unfiltered jobs in debug mode
     if logging.getLogger().level == logging.DEBUG:
         debug_file = "debug_fi_jobs.json"
         with open(debug_file, "w") as f:
@@ -105,5 +106,4 @@ if __name__ == "__main__":
         "fetched_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "data": filtered_jobs,
     }
-
     print(json.dumps(output, indent=2))
