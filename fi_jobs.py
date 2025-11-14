@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import json
 import logging
 import os
@@ -77,9 +77,8 @@ def filter_jobs(jobs: List[Job], radius_km: float = 50) -> List[Job]:
                 filtered.append(job)
     return filtered
 
-
+#  This function calculates the distance between two coordinate points
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Calculate the great-circle distance in kilometers between two points."""
     R = 6371.0
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
