@@ -9,9 +9,9 @@ services:
       - THEIRSTACK_API_KEY=${THEIRSTACK_API_KEY}
       - HOME_LAT=${HOME_LAT}
       - HOME_LON=${HOME_LON}
-    volumes: # /duunihaku is a shared volume in the Jenkins container.
-      - /duunihaku/jaysons:/app/jaysons
-      - /duunihaku/logs:/var/log
+    volumes:
+      - /home/eero/git/duunihaku/jaysons:/app/jaysons
+      - /home/eero/git/duunihaku/logs:/var/log
     ports:
       - "8501:8501"
     command: >
