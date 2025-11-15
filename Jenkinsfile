@@ -14,6 +14,12 @@ pipeline {
             }
         }
 
+        stage('Load env file') {
+            steps {
+                sh 'set -o allexport; source /var/jenkins_home/envs/duunihaku.env; set +o allexport'
+            }
+        }
+
         stage('Run Tests') {
             steps {
                 script {
