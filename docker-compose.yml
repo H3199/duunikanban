@@ -1,7 +1,7 @@
 services:
   duunihaku:
     build: .
-    container_name: duunihaku
+    container_name: kontti
     restart: always
     environment:
       - TZ=Europe/Helsinki

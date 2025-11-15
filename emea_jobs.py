@@ -14,6 +14,7 @@ dealbreakers = [
     "unpaid",
     "internship",
     "must be uk based",
+    "based in the uk",
     "uk-based",
     "must be in the uk",
     "uk only",
@@ -132,9 +133,9 @@ def fetch_jobs_emea() -> List[Job]:
         "job_description_pattern_not": dealbreakers,
         "posted_at_max_age_days": 1,
         "job_description_pattern_or": ["devops", "kubernetes", "cassandra", "linux"],
-        "job_title_or": ["devops", "site reliability", "infrastructure", "platform", "system", "administrator", "dba"]
-        }
-    response = requests.post(url, headers=headers, json=data)
+        "job_title_or": ["devops", "site reliability", "infrastructure", "platform", "system", "administrator", "dba"],
+        "job_title_not": ["architect"] # not yet...
+    }
     if not response.ok:
         raise RuntimeError(
             f"EMEA fetch failed: {response.status_code} {response.text}"
