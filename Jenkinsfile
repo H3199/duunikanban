@@ -16,7 +16,9 @@ pipeline {
 
         stage('Load env file') {
             steps {
-                sh 'set -o allexport; source /var/jenkins_home/envs/duunihaku.env; set +o allexport'
+                sh '''
+                bash -c "set -o allexport; source /var/jenkins_home/envs/duunihaku.env; set +o allexport"
+                '''
             }
         }
 
