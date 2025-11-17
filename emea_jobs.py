@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from langdetect import detect, DetectorFactory
 from datetime import datetime
-from mytypes import Job
+from mytypes import JobRecord
 from typing import List
 
 
@@ -118,8 +118,8 @@ logging.basicConfig(
 THEIRSTACK_KEY = os.getenv("THEIRSTACK_API_KEY")
 #openai_key = os.getenv("OPENAI_API_KEY")
 
-# Fetch EMEA remote jobs from TheirStack API and return as a list of Job objects.
-def fetch_jobs_emea() -> List[Job]:
+# Fetch EMEA remote jobs from TheirStack API and return as a list of JobRecord objects.
+def fetch_jobs_emea() -> List[JobRecord]:
     url = "https://api.theirstack.com/v1/jobs/search"
     headers = {
         "Content-Type": "application/json",
@@ -142,12 +142,12 @@ def fetch_jobs_emea() -> List[Job]:
         )
     payload = response.json()
     jobs_raw = payload.get("data", [])
-    jobs: List[Job] = [Job(**job) for job in jobs_raw]
+    jobs: List[JobRecord] = [JobRecord(**job) for job in jobs_raw]
     return jobs
 
 
-def filter_english_jobs(jobs: List[Job]) -> List[Job]:
-    english_jobs: List[Job] = []
+def filter_english_jobs(jobs: List[JobRecord]) -> List[JobRecord]:
+    english_jobs: List[JobRecord] = []
     for job in jobs:
         description = job.get("description", "")
         if not description:

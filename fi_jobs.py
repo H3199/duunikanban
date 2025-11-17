@@ -7,7 +7,7 @@ from math import radians, sin, cos, sqrt, atan2
 from typing import List, Optional
 import requests
 from dotenv import load_dotenv
-from mytypes import Job
+from mytypes import JobRecord
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 
 
-def fetch_jobs_fi() -> List[Job]:
+def fetch_jobs_fi() -> List[JobRecord]:
     """Fetch Finnish jobs from TheirStack API."""
     url = "https://api.theirstack.com/v1/jobs/search"
     headers = {
@@ -48,7 +48,7 @@ def fetch_jobs_fi() -> List[Job]:
     return response.json().get("data", [])
 
 
-def filter_jobs(jobs: List[Job], radius_km: float = 50) -> List[Job]:
+def filter_jobs(jobs: List[JobRecord], radius_km: float = 50) -> List[JobRecord]:
     filtered: List[Job] = []
     for job in jobs:
         remote = job.get("remote", False)

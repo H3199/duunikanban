@@ -1,4 +1,11 @@
 from typing import TypedDict, List, Optional, NotRequired, Dict, Any
+from enum import Enum
+from dataclasses import dataclass, field
+
+
+def get_state_file() -> str:
+    return os.getenv("STATE_FILE", "jaysons/job_state.json")
+
 
 class CompanyObject(TypedDict, total=False):
     id: str
@@ -64,7 +71,7 @@ class Location(TypedDict, total=False):
     display_name: str
     country_name: str
 
-class Job(TypedDict, total=False):
+class JobRecord(TypedDict, total=False):
     id: int
     job_title: str
     url: str
@@ -111,4 +118,6 @@ class Job(TypedDict, total=False):
     manager_roles: List[Any]
     matching_phrases: List[str]
     matching_words: List[str]
+
+    # Custom extensions:
     filter_reason: Optional[str]
