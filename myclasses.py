@@ -15,6 +15,7 @@ class JobState(str, Enum):
     INTERVIEW = "interview"
     REJECTED = "rejected"
     OFFER = "offer"
+    TRASH = "trash"
 
 
 def get_state_file() -> str:
@@ -58,11 +59,22 @@ class Job:
             distance_from_home_km=data.get("distance_from_home_km"),
         )
 
-
+    # TODO: redundant?
     def to_dict(self) -> dict:
         d = asdict(self)
         d["state"] = self.state.value  # convert enum to string
         return d
+
+
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "company": self.company,
+            "state": self.state.value,
+            "notes": self.notes,
+            "updated_at": self.updated_at,
+    }
 
 
     @classmethod

@@ -5,3 +5,6 @@ streamlit
 pytest
 playwright
 pytest-playwright
+fastapi
+uvicorn
+pydantic
