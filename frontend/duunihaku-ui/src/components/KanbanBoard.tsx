@@ -21,6 +21,22 @@ const COLUMN_ORDER = [
   "rejected",
 ];
 
+function createClickGuard() {
+  let moved = false;
+
+  return {
+    onMouseDown() {
+      moved = false;
+    },
+    onMouseMove() {
+      moved = true;
+    },
+    shouldClick() {
+      return !moved;
+    },
+  };
+}
+
 export function KanbanBoard() {
   const theme = useMantineTheme();
   const { jobs, setStateMutation } = useJobs();
@@ -55,7 +71,6 @@ export function KanbanBoard() {
   return (
     <ScrollArea h="85vh">
       <DragDropContext onDragEnd={onDragEnd}>
-        {/* THIS FIXES THE STACKING ISSUE */}
         <div
           style={{
             display: "flex",
@@ -87,73 +102,59 @@ export function KanbanBoard() {
                   </Group>
 
                   <ScrollArea style={{ flex: 1 }} scrollbarSize={6}>
-                    {grouped[col].map((job, index) => (
-                      <Draggable
-                        key={`job-${job.id}`}
-                        draggableId={`job-${job.id}`}
-                        index={index}
-                      >
-                        {(prov, snapshot) => {
-                          // 👇 preserve native drag transform
-                          const dragStyle = prov.draggableProps.style || {};
-                          const combinedTransform =
-                            (dragStyle.transform || "") +
-                            (snapshot.isDragging
-                              ? " scale(1.05)"
-                              : " scale(1)");
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      {grouped[col].map((job, index) => (
+                        <Draggable
+                          key={`job-${job.id}`}
+                          draggableId={`job-${job.id}`}
+                          index={index}
+                        >
+                          {(prov, snapshot) => {
+                            const guard = createClickGuard();
 
-                          return (
-                            <Card
-                              ref={prov.innerRef}
-                              {...prov.draggableProps}
-                              {...prov.dragHandleProps}
-                              withBorder
-                              radius="md"
-                              mb="md"
-                              p="sm"
-                              style={{
-                                ...dragStyle, // keep positioning from the library
-                                transform: combinedTransform, // add our effect on top
-                                background: "white",
-                                borderLeft: `4px solid ${
-                                  {
-                                    new: "#adb5bd",
-                                    saved: "#4dabf7",
-                                    applied: "#228be6",
-                                    interview: "#fab005",
-                                    offer: "#40c057",
-                                    rejected: "#fa5252",
-                                  }[job.state] || "#adb5bd"
-                                }`,
-                                transition: "transform 150ms ease",
-                                boxShadow: snapshot.isDragging
-                                  ? theme.shadows.md
-                                  : "none",
-                              }}
-                            >
-                              <Text fw={600} size="sm" mb={4}>
-                                {job.title}
-                              </Text>
-
-                              <Text size="xs" c="dimmed" mb={4}>
-                                {job.company}
-                              </Text>
-
-                              {job.notes && (
-                                <Text
-                                  size="xs"
-                                  mt={4}
-                                  style={{ color: theme.colors.gray[6] }}
-                                >
-                                  📝 {job.notes}
+                            return (
+                              <Card
+                                radius="md"
+                                withBorder
+                                shadow={snapshot.isDragging ? "md" : "xs"}
+                                ref={prov.innerRef}
+                                {...prov.draggableProps}
+                                {...prov.dragHandleProps}
+                                style={{
+                                  ...prov.draggableProps.style,
+                                  transition: snapshot.isDragging
+                                    ? "transform 0.15s ease"
+                                    : "transform 0.20s ease",
+                                  cursor: snapshot.isDragging
+                                    ? "grabbing"
+                                    : "pointer",
+                                  background: theme.colors.gray[1],
+                                }}
+                                onMouseDown={guard.onMouseDown}
+                                onMouseMove={guard.onMouseMove}
+                                onClick={() => {
+                                  if (guard.shouldClick()) {
+                                    window.open(`/job/${job.id}`, "_blank");
+                                  }
+                                }}
+                              >
+                                <Text fw={600}>{job.title}</Text>
+                                <Text size="sm" c="dimmed">
+                                  {job.company}
                                 </Text>
-                              )}
-                            </Card>
-                          );
-                        }}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+                              </Card>
+                            );
+                          }}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
                   </ScrollArea>
                 </Paper>
               )}

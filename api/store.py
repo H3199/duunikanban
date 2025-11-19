@@ -54,3 +54,9 @@ def load_raw_jobs():
             jobs.append(Job.from_raw(record))
 
     return jobs
+
+# TODO let's extend this to load jobs from other dates as well,
+# but we'll do this when we refactor everything to use a database.
+def load_all_jobs():
+    jobs = load_raw_jobs()
+    return Job.apply_saved_state(jobs)

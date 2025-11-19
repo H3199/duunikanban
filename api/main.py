@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Body
 from .services import update_job_state, apply_state_to_jobs, persist_job, update_notes
-from .store import load_state, load_raw_jobs
+from .store import load_state, load_raw_jobs, load_all_jobs
 from myclasses import JobState, Job
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +37,17 @@ def set_job_state(job_id: int, update: JobUpdate):
     # No job repository yet: API is dumb, test provides job object
     updated = persist_job(job_id, update.state, update.notes)
     return {"id": job_id, **updated}
+
+
+@app.get("/jobs/{job_id}")
+def get_job(job_id: int):
+    jobs = load_all_jobs()
+
+    job = next((j for j in jobs if j.id == job_id), None)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return job.to_dict()
 
 
 @app.get("/jobs")

@@ -1,17 +1,31 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MantineProvider } from "@mantine/core";
 import App from "./App";
-
-const queryClient = new QueryClient();
+import { MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./queryClient";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <MantineProvider withGlobalStyles withNormalizeCSS>
-        <App />
-      </MantineProvider>
-    </QueryClientProvider>
-  </React.StrictMode>,
+  <QueryClientProvider client={queryClient}>
+    <MantineProvider
+      withCssVariables
+      theme={{
+        colorScheme: "dark",
+        globalStyles: (theme) => ({
+          body: {
+            backgroundColor: theme.colors.dark[8],
+            color: theme.white,
+            margin: 0,
+          },
+        }),
+      }}
+    >
+      <ModalsProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ModalsProvider>
+    </MantineProvider>
+  </QueryClientProvider>,
 );

@@ -1,16 +1,12 @@
-import { Router, Route } from "@tanstack/react-router";
+import { Route, Routes } from "react-router-dom";
 import HomePage from "./routes/HomePage";
+import JobPage from "./pages/JobPage";
 
-export const rootRoute = new Route({
-  component: HomePage,
-});
-
-export const router = new Router({
-  routeTree: rootRoute,
-});
-
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
+export function AppRouter() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/job/:id" element={<JobPage />} />
+    </Routes>
+  );
 }
