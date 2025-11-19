@@ -86,18 +86,21 @@ export function KanbanBoard() {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   shadow="sm"
-                  radius="md"
+                  radius="lg"
                   p="sm"
                   style={{
-                    width: 280,
+                    minWidth: 280,
+                    maxWidth: 400,
                     minHeight: 450,
                     background: theme.colors.dark[6],
-                    border: `1px solid ${theme.colors.dark[2]}`,
+                    border: `1px solid ${theme.colors.dark[3]}`,
+                    borderRadius: "14px", // round columns
                     display: "flex",
                     flexDirection: "column",
+                    overflow: "hidden",
                   }}
                 >
-                  {/* ---- COLUMN HEADER (Now truly centered) ---- */}
+                  {/* ---- COLUMN HEADER ---- */}
                   <div
                     style={{
                       width: "100%",
@@ -117,14 +120,16 @@ export function KanbanBoard() {
                     </Text>
 
                     <Badge
-                      variant="light"
+                      size="xl" // 👈 bigger badge
+                      radius="sm"
                       styles={{
                         root: {
-                          marginTop: "4px",
-                          width: "26px",
-                          textAlign: "center",
+                          marginTop: "6px",
+                          padding: "6px 12px",
+                          fontSize: "1.2rem", // 👈 bigger text
+                          fontWeight: 700,
+                          background: theme.colors.dark[4],
                           color: theme.white,
-                          background: theme.colors.dark[6],
                         },
                       }}
                     >
@@ -132,7 +137,7 @@ export function KanbanBoard() {
                     </Badge>
                   </div>
 
-                  {/* ---- JOB CARDS AREA ---- */}
+                  {/* ---- JOB CARDS ---- */}
                   <ScrollArea style={{ flex: 1 }} scrollbarSize={6}>
                     <div
                       style={{
@@ -152,6 +157,7 @@ export function KanbanBoard() {
 
                             return (
                               <Card
+                                p="sm"
                                 radius="md"
                                 withBorder
                                 shadow={snapshot.isDragging ? "md" : "xs"}
@@ -159,15 +165,19 @@ export function KanbanBoard() {
                                 {...prov.draggableProps}
                                 {...prov.dragHandleProps}
                                 style={{
+                                  // 🔴 IMPORTANT: keep DnD styles first
                                   ...prov.draggableProps.style,
-                                  transition: snapshot.isDragging
-                                    ? "transform 0.15s ease"
-                                    : "transform 0.20s ease",
+                                  // then our cosmetics:
+                                  transition: "all 0.14s ease",
                                   cursor: snapshot.isDragging
                                     ? "grabbing"
                                     : "pointer",
                                   background: theme.colors.dark[5],
-                                  border: `1px solid ${theme.colors.dark[8]}`,
+                                  borderRadius: "10px", // soft cards
+                                  border: `1px solid ${theme.colors.dark[4]}`,
+                                  boxShadow: snapshot.isDragging
+                                    ? "0 6px 18px rgba(0,0,0,0.35)"
+                                    : "0 1px 4px rgba(0,0,0,0.15)",
                                 }}
                                 onMouseDown={guard.onMouseDown}
                                 onMouseMove={guard.onMouseMove}

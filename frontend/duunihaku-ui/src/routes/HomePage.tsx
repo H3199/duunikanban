@@ -1,13 +1,19 @@
-import { Title, Container } from "@mantine/core";
+import { Title } from "@mantine/core";
 import { KanbanBoard } from "../components/KanbanBoard";
 
 export default function HomePage() {
   return (
-    <Container size="xl" py="xl">
-      <Title order={2} mb="lg">
+    <div
+      style={{
+        width: "100%",
+        padding: "2rem",
+      }}
+    >
+      <Title order={2} mb="lg" style={{ color: "white", textAlign: "center" }}>
         Duunikanban
       </Title>
+
       <KanbanBoard />
-    </Container>
+    </div>
   );
 }
