@@ -91,16 +91,48 @@ export function KanbanBoard() {
                   style={{
                     width: 280,
                     minHeight: 450,
-                    background: theme.colors.gray[0],
+                    background: theme.colors.dark[6],
+                    border: `1px solid ${theme.colors.dark[2]}`,
                     display: "flex",
                     flexDirection: "column",
                   }}
                 >
-                  <Group position="apart" mb="sm">
-                    <Title order={4}>{COLUMN_LABELS[col]}</Title>
-                    <Badge>{grouped[col].length}</Badge>
-                  </Group>
+                  {/* ---- COLUMN HEADER (Now truly centered) ---- */}
+                  <div
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    <Text
+                      fw={600}
+                      size="sm"
+                      style={{ color: theme.colors.gray[3] }}
+                    >
+                      {COLUMN_LABELS[col].toUpperCase()}
+                    </Text>
 
+                    <Badge
+                      variant="light"
+                      styles={{
+                        root: {
+                          marginTop: "4px",
+                          width: "26px",
+                          textAlign: "center",
+                          color: theme.white,
+                          background: theme.colors.dark[6],
+                        },
+                      }}
+                    >
+                      {grouped[col].length}
+                    </Badge>
+                  </div>
+
+                  {/* ---- JOB CARDS AREA ---- */}
                   <ScrollArea style={{ flex: 1 }} scrollbarSize={6}>
                     <div
                       style={{
@@ -134,7 +166,8 @@ export function KanbanBoard() {
                                   cursor: snapshot.isDragging
                                     ? "grabbing"
                                     : "pointer",
-                                  background: theme.colors.gray[1],
+                                  background: theme.colors.dark[5],
+                                  border: `1px solid ${theme.colors.dark[8]}`,
                                 }}
                                 onMouseDown={guard.onMouseDown}
                                 onMouseMove={guard.onMouseMove}
@@ -144,10 +177,30 @@ export function KanbanBoard() {
                                   }
                                 }}
                               >
-                                <Text fw={600}>{job.title}</Text>
-                                <Text size="sm" c="dimmed">
+                                <Text
+                                  fw={600}
+                                  size="sm"
+                                  style={{ color: theme.white }}
+                                >
+                                  {job.title}
+                                </Text>
+
+                                <Text
+                                  size="xs"
+                                  style={{ color: theme.colors.gray[4] }}
+                                >
                                   {job.company}
                                 </Text>
+
+                                {job.notes && (
+                                  <Text
+                                    size="xs"
+                                    mt={6}
+                                    style={{ color: theme.colors.gray[5] }}
+                                  >
+                                    📝 {job.notes}
+                                  </Text>
+                                )}
                               </Card>
                             );
                           }}

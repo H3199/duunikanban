@@ -12,11 +12,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       withCssVariables
       theme={{
         colorScheme: "dark",
+        primaryColor: "blue",
+        defaultRadius: "md",
+
         globalStyles: (theme) => ({
+          "*, *::before, *::after": {
+            boxSizing: "border-box",
+          },
           body: {
-            backgroundColor: theme.colors.dark[8],
-            color: theme.white,
             margin: 0,
+            padding: 0,
+            backgroundColor: theme.colors.dark[8],
+            color: theme.colors.gray[2],
+            fontFamily: "Inter, system-ui, sans-serif",
           },
         }),
       }}
