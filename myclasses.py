@@ -66,22 +66,43 @@ class Job:
         return d
 
 
-    def as_dict(self):
+    def as_dict(self) -> dict:
+        if isinstance(self.state, JobState):
+            state_value = self.state.value
+        else:
+            # If somehow already a string, trust it
+            state_value = self.state
+
         return {
             "id": self.id,
             "title": self.title,
             "company": self.company,
-            "state": self.state.value,
+            "state": state_value,
             "notes": self.notes,
             "updated_at": self.updated_at,
-    }
+        }
 
 
     @classmethod
     def from_dict(cls, d: dict) -> "Job":
+        """
+        Restore Job instance from stored dict.
+        Safely converts string -> JobState enum.
+        """
+
+        # Construct the dataclass without state first
         job = cls(**{k: v for k, v in d.items() if k != "state"})
-        if "state" in d:
-            job.state = JobState(d["state"])
+
+        raw_state = d.get("state", JobState.NEW)
+
+        if isinstance(raw_state, JobState):
+            job.state = raw_state
+        else:
+            # If it's a string, convert to enum, fallback to NEW if unknown
+            try:
+                job.state = JobState(raw_state)
+            except ValueError:
+                job.state = JobState.NEW
         return job
 
 

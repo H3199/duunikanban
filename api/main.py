@@ -1,11 +1,26 @@
 from fastapi import FastAPI, HTTPException, Body
 from .services import update_job_state, apply_state_to_jobs, persist_job, update_notes
-from .store import load_state
+from .store import load_state, load_raw_jobs, load_all_jobs
 from myclasses import JobState, Job
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Duunihaku API")
 
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class JobUpdate(BaseModel):
     state: JobState | None = None
@@ -24,20 +39,37 @@ def set_job_state(job_id: int, update: JobUpdate):
     return {"id": job_id, **updated}
 
 
-# Return all jobs currently tracked in job_state.json.
+@app.get("/jobs/{job_id}")
+def get_job(job_id: int):
+    jobs = load_all_jobs()
+
+    job = next((j for j in jobs if j.id == job_id), None)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return job.to_dict()
+
+
 @app.get("/jobs")
 def list_jobs():
+    # 1) Load job feed (scraped or cached job list)
+    jobs = load_raw_jobs()
 
-    data = load_state()
+    # 2) Load job state persistence
+    saved_state = load_state()
 
-    # Convert stored state objects into response format
     response = []
-    for job_id, record in data.items():
-        response.append({
-            "id": int(job_id),
-            "state": record["state"],
-            "notes": record.get("notes", "")
-        })
+
+    for job in jobs:
+        job_id_str = str(job.id)
+
+        # If we have saved state, override fields
+        if job_id_str in saved_state:
+            job.state = saved_state[job_id_str].get("state", job.state)
+            job.notes = saved_state[job_id_str].get("notes", job.notes)
+            job.updated_at = saved_state[job_id_str].get("updated_at", job.updated_at)
+
+        response.append(job.as_dict())
 
     return response
 
