@@ -1,5 +1,5 @@
 from typing import List
-from backend.myclasses import Job, JobState
+from myclasses import Job, JobState
 from .store import persist_job, load_state, save_state
 
 

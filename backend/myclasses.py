@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 import json
 import os
-from .mytypes import JobRecord
+from mytypes import JobRecord
 from enum import Enum
 
 

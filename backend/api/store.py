@@ -1,7 +1,7 @@
 import json
 import os
-from backend.myclasses import JobState
-from backend.myclasses import Job
+from myclasses import JobState
+from myclasses import Job
 
 # TODO: are we pulling these from .env?
 STATE_FILE = "jaysons/job_state.json"

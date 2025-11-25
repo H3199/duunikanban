@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from backend.myclasses import JobState
+from myclasses import JobState
 
 class JobUpdate(BaseModel):
     state: JobState

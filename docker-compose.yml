@@ -9,6 +9,7 @@ services:
       - HOME_LAT=${HOME_LAT}
       - HOME_LON=${HOME_LON}
       - DATABASE_URL=sqlite:///data/duunikanban.db
+      - PYTHONPATH=/app
     volumes:
       - ./data:/app/data # persist DB
       - ./logs:/var/log # optional logs
@@ -18,15 +19,15 @@ services:
     command: uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
   frontend:
-    build: ./frontend
+    build: ./frontend/duunihaku-ui
     container_name: duunikanban-frontend
     restart: always
     environment:
-      - VITE_API_URL=http://localhost:8000 # backend URL for frontend
+      - VITE_API_URL=http://localhost:8000
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./frontend/duunihaku-ui:/app
     command: npm run dev
 
 volumes:
