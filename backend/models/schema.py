@@ -70,7 +70,7 @@ class JobStateHistory(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     job_id: UUID = Field(foreign_key="job.id")
-    user_id: UUID = Field(foreign_key="user.id")
+    user_id: Optional[UUID] = Field(default=None, foreign_key="user.id")
     cv_version_id: Optional[UUID] = Field(default=None, foreign_key="cvversion.id")
 
     state: JobState = Field(sa_column=Column(String, nullable=False))  # stored as text

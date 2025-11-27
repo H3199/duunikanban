@@ -2,13 +2,14 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Text, Title, Button, ScrollArea, Loader } from "@mantine/core";
 
+const API_URL = import.meta.env.VITE_API_URL;
 export default function JobPage() {
   const { id } = useParams();
 
   const { data, isLoading } = useQuery({
     queryKey: ["job", id],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:8000/api/v1/jobs/${id}`);
+      const res = await fetch(`${API_URL}/api/v1/jobs/${id}`);
       return res.json();
     },
   });
