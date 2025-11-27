@@ -84,7 +84,8 @@ dealbreakers = [
     "hybrid role",
     "hybrid work",
     "UK Resident",
-    "Location: Hybrid"
+    "Location: Hybrid",
+    "Polish C1"
     ]
 
 emea = [
