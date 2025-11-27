@@ -17,7 +17,7 @@ export const fetchJobs = async () => {
 };
 
 export const updateJobState = async (id: string, state: string) => {
-  const res = await axios.post(`/jobs/${id}/${state}`);
+  const res = await axios.post(`/jobs/${id}/state`, { state });
   return res.data;
 };
 
