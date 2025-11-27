@@ -12,7 +12,28 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 def list_jobs():
     with Session(engine) as session:
         jobs = session.exec(select(Job)).all()
-        return [job.dict() for job in jobs]
+        output = []
+
+        for job in jobs:
+            # get latest state record or fallback to NEW
+            history = session.exec(
+                select(JobStateHistory)
+                .where(JobStateHistory.job_id == job.id)
+                .order_by(JobStateHistory.timestamp.desc())
+            ).first()
+
+            output.append({
+                "id": job.id,
+                "title": job.title,
+                "company": job.company,
+                "url": job.url,
+                "description": job.description,
+                "country": job.country,
+                "state": history.state if history else "new",
+                "notes": history.notes if history else "",
+            })
+
+        return output
 
 
 @router.get("/{job_id}")
