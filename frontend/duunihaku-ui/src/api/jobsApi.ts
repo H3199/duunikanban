@@ -1,13 +1,27 @@
 import axios from "axios";
 
+// Smart dynamic base URL (works local + LAN + Docker + prod)
+const API_URL: string =
+  import.meta.env.VITE_API_URL ??
+  `${window.location.protocol}//${window.location.hostname}:8000`;
+
 const api = axios.create({
-  baseURL: "http://localhost:8000", // later env var
+  baseURL: `${API_URL}/api/v1`,
 });
 
-export const getJobs = () => api.get("/jobs").then((res) => res.data);
+// ---- API FUNCTIONS ----
 
-export const updateJobState = (id: number, state: string) =>
-  api.post(`/jobs/${id}`, { state });
+export const fetchJobs = async () => {
+  const res = await api.get("/jobs");
+  return res.data;
+};
 
-export const updateNotes = (id: number, notes: string) =>
-  api.patch(`/jobs/${id}/notes`, { notes });
+export const updateJobState = async (id: string, state: string) => {
+  const res = await api.post(`/jobs/${id}/state`, { state });
+  return res.data;
+};
+
+export const updateNotes = async (id: string, notes: string) => {
+  const res = await api.patch(`/jobs/${id}/notes`, { notes });
+  return res.data;
+};

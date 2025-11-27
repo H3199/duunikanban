@@ -66,7 +66,7 @@ export function KanbanBoard() {
   function onDragEnd(result: any) {
     if (!result.destination) return;
 
-    const jobId = Number(result.draggableId.replace("job-", ""));
+    const jobId = result.draggableId.replace("job-", "");
     const newState = result.destination.droppableId;
 
     // Optimistic update
@@ -77,7 +77,7 @@ export function KanbanBoard() {
     );
 
     setStateMutation.mutate(
-      { id: jobId, state: newState },
+      { id: String(jobId), state: newState },
       {
         onSettled: () =>
           setTimeout(() => queryClient.invalidateQueries(["jobs"]), 150),

@@ -9,8 +9,8 @@ import {
   Title,
   useMantineTheme,
 } from "@mantine/core";
-import type { Job } from "../api/jobs.ts";
-import { useJobs } from "../hooks/useJobs.ts";
+import type { Job } from "../api/jobs";
+import { useJobs } from "../hooks/useJobs";
 
 const COLUMN_ORDER = [
   "new",
@@ -44,19 +44,24 @@ export function KanbanBoard() {
   if (jobs.isLoading) return <>Loading...</>;
   if (!jobs.data) return <>No jobs</>;
 
+  // ---- FIX: ensure grouping does not break ----
   const grouped = Object.fromEntries(COLUMN_ORDER.map((c) => [c, [] as Job[]]));
 
   jobs.data.forEach((job: Job) => {
-    grouped[job.state].push(job);
+    const state = job.state && COLUMN_ORDER.includes(job.state)
+      ? job.state
+      : "new";  // fallback
+
+    grouped[state].push(job);
   });
 
   function onDragEnd(result: any) {
     if (!result.destination) return;
 
-    const jobId = Number(result.draggableId.replace("job-", ""));
+    const jobId = result.draggableId.replace("job-", "");
     const newState = result.destination.droppableId;
 
-    setStateMutation.mutate({ id: jobId, state: newState });
+    setStateMutation.mutate({ id: String(jobId), state: newState });
   }
 
   const COLUMN_LABELS: Record<string, string> = {
@@ -94,7 +99,7 @@ export function KanbanBoard() {
                     minHeight: 450,
                     background: theme.colors.dark[6],
                     border: `1px solid ${theme.colors.dark[3]}`,
-                    borderRadius: "14px", // round columns
+                    borderRadius: "14px",
                     display: "flex",
                     flexDirection: "column",
                     overflow: "hidden",
@@ -120,13 +125,13 @@ export function KanbanBoard() {
                     </Text>
 
                     <Badge
-                      size="xl" // 👈 bigger badge
+                      size="xl"
                       radius="sm"
                       styles={{
                         root: {
                           marginTop: "6px",
                           padding: "6px 12px",
-                          fontSize: "1.2rem", // 👈 bigger text
+                          fontSize: "1.2rem",
                           fontWeight: 700,
                           background: theme.colors.dark[4],
                           color: theme.white,
@@ -165,15 +170,13 @@ export function KanbanBoard() {
                                 {...prov.draggableProps}
                                 {...prov.dragHandleProps}
                                 style={{
-                                  // 🔴 IMPORTANT: keep DnD styles first
                                   ...prov.draggableProps.style,
-                                  // then our cosmetics:
                                   transition: "all 0.14s ease",
                                   cursor: snapshot.isDragging
                                     ? "grabbing"
                                     : "pointer",
                                   background: theme.colors.dark[5],
-                                  borderRadius: "10px", // soft cards
+                                  borderRadius: "10px",
                                   border: `1px solid ${theme.colors.dark[4]}`,
                                   boxShadow: snapshot.isDragging
                                     ? "0 6px 18px rgba(0,0,0,0.35)"
@@ -187,27 +190,16 @@ export function KanbanBoard() {
                                   }
                                 }}
                               >
-                                <Text
-                                  fw={600}
-                                  size="sm"
-                                  style={{ color: theme.white }}
-                                >
+                                <Text fw={600} size="sm" style={{ color: theme.white }}>
                                   {job.title}
                                 </Text>
 
-                                <Text
-                                  size="xs"
-                                  style={{ color: theme.colors.gray[4] }}
-                                >
+                                <Text size="xs" style={{ color: theme.colors.gray[4] }}>
                                   {job.company}
                                 </Text>
 
                                 {job.notes && (
-                                  <Text
-                                    size="xs"
-                                    mt={6}
-                                    style={{ color: theme.colors.gray[5] }}
-                                  >
+                                  <Text size="xs" mt={6} style={{ color: theme.colors.gray[5] }}>
                                     📝 {job.notes}
                                   </Text>
                                 )}

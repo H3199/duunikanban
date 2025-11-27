@@ -1,19 +1,34 @@
 services:
-  duunihaku:
-    build: .
-    container_name: kontti
+  backend:
+    build: ./backend
+    container_name: duunikanban-backend
     restart: always
     environment:
       - TZ=Europe/Helsinki
-      - MOCK=1 # or remove for production
       - THEIRSTACK_API_KEY=${THEIRSTACK_API_KEY}
       - HOME_LAT=${HOME_LAT}
       - HOME_LON=${HOME_LON}
+      - DATABASE_URL=sqlite:///data/duunikanban.db
+      - PYTHONPATH=/app
     volumes:
-      - /home/eero/git/duunihaku/jaysons:/app/jaysons
-      - /home/eero/git/duunihaku/logs:/var/log
+      - ./data:/app/data # persist DB
+      - ./logs:/var/log # optional logs
+      - ./backend:/app # live code (for dev hot reload)
     ports:
-      - "8501:8501"
-    command: >
-      bash -c "service cron start &&
-               streamlit run viewer2.py --server.port=8501 --server.address=0.0.0.0"
+      - "8000:8000"
+    command: uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+
+  frontend:
+    build: ./frontend/duunihaku-ui
+    container_name: duunikanban-frontend
+    restart: always
+    environment:
+      - VITE_API_URL=http://10.0.0.1:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/duunihaku-ui:/app
+    command: npm run dev
+
+volumes:
+  db-data:

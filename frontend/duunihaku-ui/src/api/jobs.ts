@@ -9,10 +9,10 @@ export type Job = {
   notes?: string;
 };
 
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export async function fetchJobs(): Promise<Job[]> {
-  const res = await fetch(`${API_URL}/jobs`);
+  const res = await fetch(`${API_URL}/api/v1/jobs`);
   if (!res.ok) {
     throw new Error("Failed to load jobs");
   }
