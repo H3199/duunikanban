@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api.v1.jobs import router as jobs_router
-from backend.core.database import init_db
+from api.v1.jobs import router as jobs_router
+from core.database import init_db
 
 
 app = FastAPI(title="Duunikanban API")
