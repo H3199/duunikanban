@@ -25,3 +25,8 @@ export const updateNotes = async (id: string, notes: string) => {
   const res = await api.patch(`/jobs/${id}/notes`, { notes });
   return res.data;
 };
+
+export const fetchCredits = async () => {
+  const res = await api.get("/status/credits");
+  return res.data.remaining_credits;
+};

@@ -11,7 +11,9 @@ import {
 } from "@mantine/core";
 import type { Job } from "../api/jobs";
 import { useJobs } from "../hooks/useJobs";
+import { fetchCredits } from "../api/jobsApi";
 import { flagFromCountry } from "../utils/flagFromCountry";
+import { useQuery } from "@tanstack/react-query";
 
 const COLUMN_ORDER = [
   "new",
@@ -231,7 +233,25 @@ export function KanbanBoard() {
             </Droppable>
           ))}
         </div>
+        <CreditsFooter />
       </DragDropContext>
     </ScrollArea>
+  );
+}
+
+export function CreditsFooter() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["credits"],
+    queryFn: fetchCredits,
+    refetchInterval: 60000, // 1 min auto refresh
+  });
+
+  return (
+    <Text
+      size="xs"
+      style={{ marginTop: "8px", textAlign: "center", opacity: 0.6 }}
+    >
+      {isLoading ? "Checking API credits..." : `${data} credits remaining`}
+    </Text>
   );
 }
