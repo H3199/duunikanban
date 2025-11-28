@@ -8,10 +8,10 @@ load_dotenv()
 
 THEIRSTACK_KEY = os.getenv("THEIRSTACK_API_KEY")
 
-router = APIRouter(tags=["Status"])
+router = APIRouter(tags=["status"])
 
 
-@router.get("/credits")
+@router.get("/status/credits")
 def fetch_credits():
     try:
         return {"remaining_credits": get_credits()}

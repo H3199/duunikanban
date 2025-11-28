@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.v1.jobs import router as jobs_router
+from api.v1.status.credits import router as status_router
 from core.database import init_db
 
 
