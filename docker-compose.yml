@@ -23,11 +23,12 @@ services:
     container_name: duunikanban-frontend
     restart: always
     environment:
-      - VITE_API_URL=http://10.0.0.1:8000
+      - VITE_API_URL=http://localhost:8000
     ports:
       - "3000:3000"
     volumes:
       - ./frontend/duunihaku-ui:/app
+      - /app/node_modules
     command: npm run dev
 
 volumes:
