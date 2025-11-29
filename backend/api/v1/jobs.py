@@ -26,7 +26,7 @@ def list_jobs():
                 **job.dict(),
                 "state": job.history[-1].state if job.history else "new",
                 "notes": job.history[-1].notes if job.history else "",
-                "updated_at": job.history[-1].timestamp if job.history else job.created_at,
+                "updated_at": job.history[-1].timestamp if job.history else None,
             }
             for job in jobs
         ]
