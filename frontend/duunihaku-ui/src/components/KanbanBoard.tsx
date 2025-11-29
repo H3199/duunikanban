@@ -50,19 +50,28 @@ export function KanbanBoard() {
   // ---- FIX: ensure grouping does not break ----
   const grouped = Object.fromEntries(COLUMN_ORDER.map((c) => [c, [] as Job[]]));
 
-  // ---- Group jobs by state ----
   jobs.data.forEach((job: Job) => {
     const state =
-      job.state && COLUMN_ORDER.includes(job.state) ? job.state : "new";
+      job.state && COLUMN_ORDER.includes(job.state) ? job.state : "new"; // fallback
     grouped[state].push(job);
   });
 
   // ---- Sort each column: newest first ----
   Object.keys(grouped).forEach((state) => {
     grouped[state].sort((a, b) => {
-      const dateA = new Date(a.updated_at ?? 0).getTime();
-      const dateB = new Date(b.updated_at ?? 0).getTime();
-      return dateB - dateA; // newest first
+      // 1) Prefer updated_at (from history)
+      const tsA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const tsB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+
+      if (tsA !== tsB) {
+        return tsB - tsA; // newer timestamp first
+      }
+
+      // 2) Fallback: external_id (TheirStack ID usually increases with time)
+      const extA = Number((a as any).external_id ?? 0);
+      const extB = Number((b as any).external_id ?? 0);
+
+      return extB - extA; // higher ID first
     });
   });
 
