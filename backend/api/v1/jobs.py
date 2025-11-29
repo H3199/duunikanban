@@ -4,6 +4,7 @@ from sqlmodel import Session, select, desc
 from core.database import engine
 from models.schema import Job, JobStateHistory, JobState
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -11,29 +12,32 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 @router.get("")
 def list_jobs():
     with Session(engine) as session:
-        jobs = session.exec(select(Job)).all()
-        output = []
+        # fetch jobs + joined history (latest first)
+        statement = (
+            select(Job)
+            .outerjoin(JobStateHistory)
+            .order_by(desc(JobStateHistory.timestamp))
+        )
+        jobs = session.exec(statement).unique().all()
 
-        for job in jobs:
-            # get latest state record or fallback to NEW
-            history = session.exec(
-                select(JobStateHistory)
-                .where(JobStateHistory.job_id == job.id)
-                .order_by(JobStateHistory.timestamp.desc())
-            ).first()
+        # Build response with computed state/updated_at
+        formatted = [
+            {
+                **job.dict(),
+                "state": job.history[-1].state if job.history else "new",
+                "notes": job.history[-1].notes if job.history else "",
+                "updated_at": job.history[-1].timestamp if job.history else job.created_at,
+            }
+            for job in jobs
+        ]
 
-            output.append({
-                "id": job.id,
-                "title": job.title,
-                "company": job.company,
-                "url": job.url,
-                "description": job.description,
-                "country": job.country,
-                "state": history.state if history else "new",
-                "notes": history.notes if history else "",
-            })
+        # Final sort: newest first using updated_at OR created_at fallback
+        formatted.sort(
+            key=lambda j: j["updated_at"] or datetime.min,
+            reverse=True
+        )
+        return formatted
 
-        return output
 
 
 @router.get("/{job_id}")
