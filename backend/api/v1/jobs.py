@@ -94,13 +94,17 @@ def update_notes(job_id: UUID, notes: str = Body(..., embed=True)):
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
+        # Use existing state rather than defaulting to NEW
+        current_state = job.history[-1].state if job.history else JobState.NEW
+
         history = JobStateHistory(
             job_id=job_id,
             user_id=None,
-            state=JobState.NEW,  # keeps previous state or set explicitly later
+            state=current_state,
             notes=notes
         )
         session.add(history)
         session.commit()
+        session.refresh(history)
 
-        return {"job_id": job_id, "notes": notes}
+        return {"job_id": job_id, "state": history.state, "notes": history.notes}

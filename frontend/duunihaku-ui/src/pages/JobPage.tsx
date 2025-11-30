@@ -8,8 +8,10 @@ import {
   Loader,
   Group,
   Badge,
+  Textarea,
 } from "@mantine/core";
-import { updateJobState } from "../api/jobsApi";
+import { useState, useEffect } from "react";
+import { updateJobState, updateNotes } from "../api/jobsApi";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,7 +19,6 @@ export default function JobPage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
 
-  // Fetch job details
   const { data, isLoading } = useQuery({
     queryKey: ["job", id],
     queryFn: async () => {
@@ -27,13 +28,31 @@ export default function JobPage() {
     },
   });
 
-  // Mutation: Update job state
+  // ---- Notes state ----
+  const [localNotes, setLocalNotes] = useState("");
+
+  // Sync once job data loads
+  useEffect(() => {
+    if (data?.notes) {
+      setLocalNotes(data.notes);
+    }
+  }, [data]);
+
+  // ---- Mutation: update job state ----
   const stateMutation = useMutation({
     mutationFn: ({ state }: { state: string }) => updateJobState(id!, state),
     onSuccess: () => {
-      // Refresh job detail + the main kanban list
-      queryClient.invalidateQueries({ queryKey: ["job", id] });
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries(["job", id]);
+      queryClient.invalidateQueries(["jobs"]);
+    },
+  });
+
+  // ---- Mutation: update notes ----
+  const notesMutation = useMutation({
+    mutationFn: ({ notes }: { notes: string }) => updateNotes(id!, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["job", id]);
+      queryClient.invalidateQueries(["jobs"]);
     },
   });
 
@@ -63,7 +82,7 @@ export default function JobPage() {
         Open Job Posting
       </Button>
 
-      {/* ---- ACTION BUTTONS ---- */}
+      {/* ---- ACTION BUTTON ROW ---- */}
       <Group mt="lg">
         <Button
           color="yellow"
@@ -89,6 +108,45 @@ export default function JobPage() {
         >
           Trash
         </Button>
+      </Group>
+
+      {/* ---- NOTES ---- */}
+      <Title order={4} mt="xl">
+        Notes
+      </Title>
+
+      <Textarea
+        minRows={4}
+        autosize
+        placeholder="Add notes..."
+        value={localNotes}
+        onChange={(e) => setLocalNotes(e.target.value)}
+        styles={{
+          input: {
+            background: "#1f1f1f",
+            color: "white",
+          },
+        }}
+      />
+
+      <Group mt="sm">
+        <Button
+          size="sm"
+          variant="filled"
+          color="teal"
+          disabled={
+            notesMutation.isPending || localNotes === (data.notes ?? "")
+          }
+          onClick={() => notesMutation.mutate({ notes: localNotes })}
+        >
+          {notesMutation.isPending ? "Saving..." : "Save Notes"}
+        </Button>
+
+        {localNotes !== (data.notes ?? "") && !notesMutation.isPending && (
+          <Text size="xs" style={{ opacity: 0.6 }}>
+            Unsaved changes…
+          </Text>
+        )}
       </Group>
 
       <Text mt="xl" size="sm" style={{ whiteSpace: "pre-line" }}>
