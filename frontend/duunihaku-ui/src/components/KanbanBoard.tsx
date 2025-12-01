@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   Card,
@@ -6,7 +7,7 @@ import {
   ScrollArea,
   Badge,
   Group,
-  Title,
+  Select,
   useMantineTheme,
 } from "@mantine/core";
 import type { Job } from "../api/jobs";
@@ -24,9 +25,16 @@ const COLUMN_ORDER = [
   "trash",
 ];
 
+const TIME_FILTERS = [
+  { value: "", label: "All" },
+  { value: "12h", label: "Last 12h" },
+  { value: "24h", label: "Last 24h" },
+  { value: "48h", label: "Last 48h" },
+  { value: "7d", label: "Last 7 days" },
+];
+
 function createClickGuard() {
   let moved = false;
-
   return {
     onMouseDown() {
       moved = false;
@@ -42,45 +50,36 @@ function createClickGuard() {
 
 export function KanbanBoard() {
   const theme = useMantineTheme();
-  const { jobs, setStateMutation } = useJobs();
+
+  // ➜ NEW: keep filter state
+  const [inboxFilter, setInboxFilter] = useState<string | undefined>(undefined);
+
+  // ➜ UPDATED: pass filter to hook (backend already supports it)
+  const { jobs, setStateMutation } = useJobs(inboxFilter);
 
   if (jobs.isLoading) return <>Loading...</>;
   if (!jobs.data) return <>No jobs</>;
 
-  // ---- FIX: ensure grouping does not break ----
   const grouped = Object.fromEntries(COLUMN_ORDER.map((c) => [c, [] as Job[]]));
 
   jobs.data.forEach((job: Job) => {
     const state =
-      job.state && COLUMN_ORDER.includes(job.state) ? job.state : "new"; // fallback
+      job.state && COLUMN_ORDER.includes(job.state) ? job.state : "new";
     grouped[state].push(job);
   });
 
-  // ---- Sort each column: newest first ----
   Object.keys(grouped).forEach((state) => {
     grouped[state].sort((a, b) => {
-      // 1) Prefer updated_at (from history)
       const tsA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
       const tsB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-
-      if (tsA !== tsB) {
-        return tsB - tsA; // newer timestamp first
-      }
-
-      // 2) Fallback: external_id (TheirStack ID usually increases with time)
-      const extA = Number((a as any).external_id ?? 0);
-      const extB = Number((b as any).external_id ?? 0);
-
-      return extB - extA; // higher ID first
+      return tsB - tsA;
     });
   });
 
   function onDragEnd(result: any) {
     if (!result.destination) return;
-
     const jobId = result.draggableId.replace("job-", "");
     const newState = result.destination.droppableId;
-
     setStateMutation.mutate({ id: String(jobId), state: newState });
   }
 
@@ -95,7 +94,6 @@ export function KanbanBoard() {
 
   return (
     <ScrollArea h="85vh">
-      {/* ---- Credits at the top ---- */}
       <div style={{ textAlign: "right", padding: "0.5rem 1rem", opacity: 0.8 }}>
         <CreditsFooter />
       </div>
@@ -130,7 +128,6 @@ export function KanbanBoard() {
                     overflow: "hidden",
                   }}
                 >
-                  {/* ---- COLUMN HEADER ---- */}
                   <div
                     style={{
                       width: "100%",
@@ -165,9 +162,21 @@ export function KanbanBoard() {
                     >
                       {grouped[col].length}
                     </Badge>
+
+                    {/* ➜ Only for inbox column */}
+                    {col === "new" && (
+                      <Select
+                        size="xs"
+                        mt={6}
+                        value={inboxFilter ?? ""}
+                        placeholder="Filter inbox"
+                        onChange={(v) => setInboxFilter(v || undefined)}
+                        data={TIME_FILTERS}
+                        style={{ width: "90%", marginTop: "6px" }}
+                      />
+                    )}
                   </div>
 
-                  {/* ---- JOB CARDS ---- */}
                   <ScrollArea style={{ flex: 1 }} scrollbarSize={6}>
                     <div
                       style={{
@@ -184,7 +193,6 @@ export function KanbanBoard() {
                         >
                           {(prov, snapshot) => {
                             const guard = createClickGuard();
-
                             return (
                               <Card
                                 p="sm"
@@ -209,11 +217,10 @@ export function KanbanBoard() {
                                 }}
                                 onMouseDown={guard.onMouseDown}
                                 onMouseMove={guard.onMouseMove}
-                                onClick={() => {
-                                  if (guard.shouldClick()) {
-                                    window.open(`/job/${job.id}`, "_blank");
-                                  }
-                                }}
+                                onClick={() =>
+                                  guard.shouldClick() &&
+                                  window.open(`/job/${job.id}`, "_blank")
+                                }
                               >
                                 <Group gap="xs">
                                   <Text size="lg">
@@ -266,7 +273,7 @@ export function CreditsFooter() {
   const { data, isLoading } = useQuery({
     queryKey: ["credits"],
     queryFn: fetchCredits,
-    refetchInterval: 60000, // 1 min auto refresh
+    refetchInterval: 60000,
   });
 
   return (

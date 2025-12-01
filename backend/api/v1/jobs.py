@@ -1,41 +1,70 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Query
 from uuid import UUID
 from sqlmodel import Session, select, desc, asc
 from core.database import engine
 from models.schema import Job, JobStateHistory, JobState
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
+RANGE_MAP = {
+    "12h": timedelta(hours=12),
+    "24h": timedelta(hours=24),
+    "48h": timedelta(hours=48),
+    "7d": timedelta(days=7),
+}
+
+
+def normalize_ts(v):
+    if not v:
+        return None
+    if isinstance(v, datetime):
+        return v
+    # assume string
+    try:
+        return datetime.fromisoformat(v)
+    except:
+        # last-chance fallback for older timestamps
+        return datetime.strptime(v.split(".")[0], "%Y-%m-%d %H:%M:%S")
+
 
 @router.get("")
-def list_jobs():
+def list_jobs(range: str | None = Query(None)):
+
+    cutoff = None
+    if range and range in RANGE_MAP:
+        cutoff = datetime.utcnow() - RANGE_MAP[range]
+
     with Session(engine) as session:
-        # fetch jobs + joined history (latest first)
-        statement = (
+        stmt = (
             select(Job)
             .outerjoin(JobStateHistory)
             .order_by(desc(JobStateHistory.timestamp))
         )
-        jobs = session.exec(statement).unique().all()
+        jobs = session.exec(stmt).unique().all()
 
-        # Build response with computed state/updated_at
-        formatted = [
-            {
-                **job.dict(),
-                "state": job.history[-1].state if job.history else "new",
-                "notes": job.history[-1].notes if job.history else "",
-                "updated_at": job.history[-1].timestamp if job.history else None,
-            }
-            for job in jobs
-        ]
+        formatted = []
+        for job in jobs:
+            latest = job.history[-1] if job.history else None
+            state = latest.state if latest else "new"
+            updated_at = normalize_ts(latest.timestamp if latest else None)
 
-        # Final sort: newest first using updated_at OR created_at fallback
-        formatted.sort(
-            key=lambda j: j["updated_at"] or datetime.min,
-            reverse=True
-        )
+            if cutoff and state == "new":
+                if not updated_at or updated_at < cutoff:
+                    continue
+
+            formatted.append(
+                {
+                    **job.dict(),
+                    "state": state,
+                    "notes": latest.notes if latest else "",
+                    "updated_at": updated_at.isoformat() if updated_at else None,
+                }
+            )
+
+        formatted.sort(key=lambda j: normalize_ts(j["updated_at"]) or datetime.min, reverse=True)
+
         return formatted
 
 

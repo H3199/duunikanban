@@ -7,6 +7,7 @@ export type Job = {
   country?: string;
   state: string;
   notes?: string;
+  updated_at?: string | null;
 };
 
 const API_URL = import.meta.env.VITE_API_URL;

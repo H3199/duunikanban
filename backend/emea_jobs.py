@@ -8,7 +8,7 @@ from langdetect import detect, DetectorFactory
 from datetime import datetime
 from mytypes import JobRecord # Basically ORMish stuff, some technical debt here, because I never planned this project to grow this complex.
 from core.database import engine # DB stuff, obviously.
-from models.schema import Job, JobRegion
+from models.schema import Job, JobRegion, JobStateHistory
 from typing import List
 from sqlmodel import Session, select
 from api.status import get_credits
@@ -85,7 +85,8 @@ dealbreakers = [
     "hybrid work",
     "UK Resident",
     "Location: Hybrid",
-    "Polish C1"
+    "Polish",
+    "Hybrid within",
     ]
 
 emea = [
@@ -197,11 +198,13 @@ def save_jobs_to_db(jobs: List[JobRecord]):
                     "country": raw.get("country", None),
                 }
 
+                # Only update changed fields
                 for field, value in updates.items():
                     if getattr(existing, field) != value:
                         setattr(existing, field, value)
                         changed = True
 
+                # Ensure region is set
                 if existing.region is None:
                     existing.region = JobRegion.EMEA
                     changed = True
@@ -218,14 +221,26 @@ def save_jobs_to_db(jobs: List[JobRecord]):
                     url=raw["url"],
                     description=raw.get("description", ""),
                     country=raw.get("country", None),
-                    region=JobRegion.EMEA,  # <-- NEW
+                    region=JobRegion.EMEA,
                 )
                 session.add(job)
+                session.flush()  # ensures job.id exists
+
+                # Create initial state record
+                history = JobStateHistory(
+                    job_id=job.id,
+                    state="new",
+                    notes=None,
+                    timestamp=datetime.utcnow(),
+                )
+                session.add(history)
+
                 inserted += 1
 
         session.commit()
 
-    logging.info(f"DB write complete — inserted: {inserted}, updated: {updated}")
+    logging.info(f"[EMEA] DB sync complete — inserted: {inserted}, updated: {updated}")
+
 
 
 if __name__ == "__main__":

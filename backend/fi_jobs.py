@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from mytypes import JobRecord
 from sqlmodel import Session, select
 from core.database import engine
-from models.schema import Job, JobRegion, JobSource
+from models.schema import Job, JobRegion, JobSource, JobStateHistory
 from typing import List
 
 load_dotenv()
@@ -120,6 +120,7 @@ def save_jobs_to_db_fi(jobs: List[dict]):
                         setattr(existing, field, value)
                         changed = True
 
+                # Ensure region is set
                 if existing.region is None:
                     existing.region = JobRegion.FI
                     changed = True
@@ -129,6 +130,7 @@ def save_jobs_to_db_fi(jobs: List[dict]):
                     updated += 1
 
             else:
+                # Create new job
                 job = Job(
                     external_id=external_id,
                     title=raw["job_title"],
@@ -139,6 +141,17 @@ def save_jobs_to_db_fi(jobs: List[dict]):
                     region=JobRegion.FI,
                 )
                 session.add(job)
+                session.flush()  # So new job gets an ID before adding history
+
+                # Add jobstate history entry
+                history = JobStateHistory(
+                    job_id=job.id,
+                    state="new",
+                    notes=None,
+                    timestamp=datetime.utcnow()
+                )
+                session.add(history)
+
                 inserted += 1
 
         session.commit()
