@@ -71,7 +71,7 @@ VITE_API_URL=http://<your-docker-host>:8000
 
 
 ## Roadmap
-- [ ] Kanban UI: v0.1.0
+- [x] Kanban UI: v0.1.0
 - [ ] Timers for stale jobs: v0.2.0
 - [ ] Multiple users & SaaS: v0.2.0
 - [ ] Tool for manually filling kanban cards.: v0.2.0
