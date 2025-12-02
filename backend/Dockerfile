@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-RUN apt-get update && apt-get install -y sqlite3 && apt-get install -y nano && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y sqlite3 && apt-get install -y nano && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y cron tini && rm -rf /var/lib/apt/lists/*
@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN chmod +x /app/runner.sh /app/entrypoint.sh
+RUN chmod +x /app/runner.sh /app/backend_entrypoint.sh /app/cron_entrypoint.sh
 
 # Set cron job
 RUN echo "SHELL=/bin/bash" > /etc/cron.d/jobfetcher \
@@ -28,4 +28,5 @@ EXPOSE 8501
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 #CMD ["/app/entrypoint.sh"]
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+#CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

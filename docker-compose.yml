@@ -16,7 +16,24 @@ services:
       - ./backend:/app # live code (for dev hot reload)
     ports:
       - "8000:8000"
-    command: uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+    #command: uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+    command: ["/app/backend_entrypoint.sh"]
+
+  cron:
+    build: ./backend
+    container_name: duunikanban-cron
+    restart: always
+    environment:
+      - TZ=Europe/Helsinki
+      - THEIRSTACK_API_KEY=${THEIRSTACK_API_KEY}
+      - HOME_LAT=${HOME_LAT}
+      - HOME_LON=${HOME_LON}
+      - DATABASE_URL=sqlite:///data/duunikanban.db
+      - PYTHONPATH=/app
+    volumes:
+      - ./data:/app/data
+      - ./logs:/var/log
+    command: ["/app/cron_entrypoint.sh"]
 
   frontend:
     build: ./frontend/duunihaku-ui
