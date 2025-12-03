@@ -12,9 +12,13 @@ from sqlmodel import Session, select
 from core.database import engine
 from models.schema import Job, JobRegion, JobSource, JobStateHistory
 from typing import List
+from config_loader import load_config
+
 
 load_dotenv()
+config = load_config()
 
+FI_QUERY = config["fi_query"]
 THEIRSTACK_KEY = os.getenv("THEIRSTACK_API_KEY")
 HOME_LAT = float(os.getenv("HOME_LAT"))
 HOME_LON = float(os.getenv("HOME_LON"))
@@ -27,28 +31,21 @@ logging.basicConfig(
 
 def fetch_jobs_fi() -> List[JobRecord]:
     url = "https://api.theirstack.com/v1/jobs/search"
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {THEIRSTACK_KEY}",
     }
-    data = {
-        "page": 0,
-        "limit": 25,
-        "job_country_code_or": ["FI"],
-        "posted_at_max_age_days": 1,
-        "job_description_pattern_or": [
-            "devops", "kubernetes", "cassandra", "linux"
-        ],
-        "job_title_or": [
-            "devops", "site reliability", "infrastructure", "platform",
-            "system", "administrator", "dba"
-        ],
-    }
-    response = requests.post(url, headers=headers, json=data)
+
+    payload = FI_QUERY
+
+    response = requests.post(url, headers=headers, json=payload)
+
     if not response.ok:
         raise RuntimeError(f"FI fetch failed: {response.status_code} {response.text}")
 
-    return response.json().get("data", [])
+    jobs_raw = response.json().get("data", [])
+    return jobs_raw
 
 
 def filter_jobs(jobs: List[JobRecord], radius_km: float = 50) -> List[JobRecord]:
