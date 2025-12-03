@@ -15,6 +15,7 @@ import { useJobs } from "../hooks/useJobs";
 import { fetchCredits } from "../api/jobsApi";
 import { flagFromCountry } from "../utils/flagFromCountry";
 import { useQuery } from "@tanstack/react-query";
+import { APP_VERSION } from "../version";
 
 const COLUMN_ORDER = [
   "new",
@@ -94,10 +95,12 @@ export function KanbanBoard() {
 
   return (
     <ScrollArea h="85vh">
-      <div style={{ textAlign: "right", padding: "0.5rem 1rem", opacity: 0.8 }}>
+      <div
+        style={{ textAlign: "center", padding: "0.5rem 0.5rem", opacity: 0.8 }}
+      >
+        <small>v{APP_VERSION}</small>
         <CreditsFooter />
       </div>
-
       <DragDropContext onDragEnd={onDragEnd}>
         <div
           style={{
@@ -263,7 +266,6 @@ export function KanbanBoard() {
             </Droppable>
           ))}
         </div>
-        <CreditsFooter />
       </DragDropContext>
     </ScrollArea>
   );
